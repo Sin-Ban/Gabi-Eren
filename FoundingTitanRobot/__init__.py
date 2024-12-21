@@ -32,18 +32,18 @@ if os.path.exists(".env"):
     load_dotenv()
 
 ENV = bool(os.getenv("ENV", False))
-TOKEN = os.getenv("TOKEN", "ABCDefgh1234")
+TOKEN = os.getenv("TOKEN", "1609173332:AAHhiISpdOlKLMMsNUiLMrohDQeQvZFc2eM")
 
 try:
-    OWNER_ID = int(os.getenv("OWNER_ID", 0))
+    OWNER_ID = int(os.getenv("OWNER_ID", "6200648859"))
     DEVIL_SUCCESSOR = int(os.getenv("DEVIL_SUCCESSOR", 0))
 except ValueError as e:
     raise Exception(
         "Your OWNER_ID and Anugay env variable is not a valid integer."
     ) from e
 
-JOIN_LOGGER = os.getenv("JOIN_LOGGER", None)
-OWNER_USERNAME = os.getenv("OWNER_USERNAME", None)
+JOIN_LOGGER = os.getenv("JOIN_LOGGER", "-1001992945056")
+OWNER_USERNAME = os.getenv("OWNER_USERNAME", "QuincyKingYhwach")
 
 try:
     TITANSHIFTERS = {int(x) for x in os.getenv("TITANSHIFTERS", "").split()}
@@ -74,15 +74,15 @@ except ValueError as error:
         "Your scout users list does not contain valid integers."
     ) from error
 
-INFOPIC = bool(os.getenv("INFOPIC", False))
-EVENT_LOGS = os.getenv("EVENT_LOGS", None)
+INFOPIC = bool(os.getenv("INFOPIC", True))
+EVENT_LOGS = os.getenv("EVENT_LOGS", "-1001992945056")
 WEBHOOK = bool(os.getenv("WEBHOOK", False))
 URL = os.getenv("URL", "")  # Does not contain token
 PORT = int(os.getenv("PORT", 69))
 CERT_PATH = bool(os.getenv("CERT_PATH", False))
-API_ID = int(os.getenv("API_ID", 245))
-API_HASH = str(os.getenv("API_HASH", 6547))
-DB_URI = os.getenv("DATABASE_URL", "https://otakuxregiment.com")
+API_ID = int(os.getenv("API_ID", "29897260"))
+API_HASH = str(os.getenv("API_HASH", "6ec626173805d7bcfbc407b6d70da337"))
+DB_URI = os.getenv("DATABASE_URL", "postgres://ftcwjpto:8aFHgSAok082LwQFMHWo3Q26fWGDh4WM@queenie.db.elephantsql.com/ftcwjpto")
 DONATION_LINK = os.getenv("DONATION_LINK")
 LOAD = os.getenv("LOAD", "").split()
 NO_LOAD = os.getenv("NO_LOAD", "translation").split()
@@ -94,10 +94,10 @@ ALLOW_EXCL = os.getenv("ALLOW_EXCL", False)
 TEMP_DOWNLOAD_DIRECTORY = os.getenv("TEMP_DOWNLOAD_DIRECTORY", "./")
 CASH_API_KEY = os.getenv("CASH_API_KEY", None)
 TIME_API_KEY = os.getenv("TIME_API_KEY", None)
-REDIS_URL = os.getenv("REDIS_URI", "redis.com")
+REDIS_URL = os.getenv("REDIS_URI", "redis://Gabi:Gabi_123@redis-11501.c14.us-east-1-2.ec2.redns.redis-cloud.com:11501")
 ARQ_API = os.getenv("ARQ_API", None)
-BOT_ID = int(os.getenv("BOT_ID", 0))
-BOT_USERNAME = os.getenv("BOT_USERNAME", None)
+BOT_ID = int(os.getenv("BOT_ID", "1609173332"))
+BOT_USERNAME = os.getenv("BOT_USERNAME", "Gabi_Braun_Robot")
 SUPPORT_CHAT = os.getenv("SUPPORT_CHAT", None)
 ALLOW_CHATS = os.getenv("ALLOW_CHATS", True)
 ERROR_LOGS = os.getenv("ERROR_LOGS", None)
