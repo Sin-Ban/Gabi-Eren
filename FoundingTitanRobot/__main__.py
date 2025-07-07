@@ -36,7 +36,7 @@ from FoundingTitanRobot.modules.helper_funcs.chat_status import is_user_admin
 from FoundingTitanRobot.modules.helper_funcs.alternate import typing_action
 from FoundingTitanRobot.modules.helper_funcs.misc import paginate_modules
 from FoundingTitanRobot.modules.disable import DisableAbleCommandHandler
-from telegram import Chat, InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Chat, InlineKeyboardButton, InlineKeyboardMarkup, Update, InputMediaPhoto
 from telegram.constants import ParseMode
 from telegram.error import (
     BadRequest,
@@ -85,14 +85,14 @@ def get_readable_time(seconds: float) -> str:
 
 PM_START_TEXT = """
 Hey {user}!
-I'm [Eren]({links}), an Attack on Titan anime themed group management bot.
+I'm Gabi Braun, an Attack on Titan anime themed group management bot.
 Built by weebs for weebs, I specialize in managing anime eccentric communities.
 """
 
 buttons = [
     [
         InlineKeyboardButton(
-            text="➕ Add Me", url="t.me/FoundingTitanRobot?startgroup=true"),    
+            text="➕ Add Me", url="t.me/Gabi_Braun_Robot?startgroup=true"),    
         InlineKeyboardButton(
               text="⚙️ Help", callback_data="help_back"),   
    ],
@@ -212,7 +212,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         [[InlineKeyboardButton(text="Back", callback_data="help_back")]]
                     ),
                 )
-
             elif args[0].lower().startswith("stngs_"):
                 match = re.match("stngs_(.*)", args[0].lower())
                 chat = await application.bot.getChat(match[1])
@@ -227,17 +226,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         else:
             first_name = update.effective_user.first_name
-            links = random.choice(fs.START_PICS)
-            await update.effective_message.reply_text(
-                PM_START_TEXT.format(
-                user=escape_markdown(first_name), links=links),                
+            await update.effective_message.reply_photo(
+                photo=random.choice(fs.START_PICS),
+                caption=PM_START_TEXT.format(user=escape_markdown(first_name)),
                 reply_markup=InlineKeyboardMarkup(buttons),
                 parse_mode=ParseMode.MARKDOWN,
                 read_timeout=60,
             )
     else:
-        await update.effective_message.reply_text(
-            f"I'm awake already!\n<b>Haven't slept since:</b> <code>{uptime}</code>",
+        await update.effective_message.reply_photo(
+            photo=random.choice(fs.START_PICS),
+            caption=f"I'm awake already!\n<b>Haven't slept since:</b> <code>{uptime}</code>",
             parse_mode=ParseMode.HTML,
         )
 
@@ -362,14 +361,13 @@ async def eren_callback_data(update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     if query.data == "eren_back":
         first_name = update.effective_user.first_name
-        links = random.choice(fs.START_PICS)
-        await query.message.edit_text(
-                PM_START_TEXT.format(
-                user=escape_markdown(first_name), links=links),
-                reply_markup=InlineKeyboardMarkup(buttons),
-                parse_mode=ParseMode.MARKDOWN,
-                write_timeout=60,
-                disable_web_page_preview=False,
+        await query.message.edit_media(
+            media=InputMediaPhoto(
+                media=random.choice(fs.START_PICS),
+                caption=PM_START_TEXT.format(user=escape_markdown(first_name)),
+                parse_mode="Markdown"
+            ),
+            reply_markup=InlineKeyboardMarkup(buttons)
         )
 
 
