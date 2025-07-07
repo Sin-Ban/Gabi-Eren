@@ -138,7 +138,7 @@ finally:
 
 
 application = tg.Application.builder().token(TOKEN).build()
-telethn = TelegramClient(f"TelethonSession_{BOT_ID}", API_ID, API_HASH, use_ipv6=True)
+telethn = TelegramClient(f"TelethonSession_{BOT_ID}", API_ID, API_HASH)
 pbot = Client(f"PyrogramSession_{BOT_ID}", api_id=API_ID, api_hash=API_HASH, bot_token=TOKEN, workers=WORKERS)
 eren_paste = Pastebin(api_dev_key=PASTE_API)
 #try:
