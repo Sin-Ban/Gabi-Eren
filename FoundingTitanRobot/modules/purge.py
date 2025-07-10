@@ -3,7 +3,7 @@ from telethon import events
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes, filters
 
-from FoundingTitanRobot import telethn, application  # ✅ PTB v21.1 uses Application
+from FoundingTitanRobot import telethn, application
 from FoundingTitanRobot.modules.helper_funcs.chat_status import (
     can_delete,
     user_admin,
@@ -19,7 +19,13 @@ import FoundingTitanRobot.modules.sql.purges_sql as sql
 # TELETHON: /purge
 async def purge_messages(event):
     start = time.perf_counter()
-    if event.from_id is None:
+
+    if (
+        not isinstance(event.from_id, int)
+        or event.from_id <= 0
+        or not event.chat_id
+        or (isinstance(event.chat_id, int) and event.chat_id <= 0)
+    ):
         return
 
     if not await user_is_admin(user_id=event.sender_id, message=event) and event.from_id not in [1087968824]:
@@ -50,19 +56,23 @@ async def purge_messages(event):
         if len(messages) == 100:
             await event.client.delete_messages(event.chat_id, messages)
             messages = []
-    print(messages)
     try:
         await event.client.delete_messages(event.chat_id, messages)
     except:
         pass
+
     time_ = time.perf_counter() - start
-    text = f"Purged Successfully in {time_:0.2f}s"
-    await event.respond(text, parse_mode="markdown")
+    await event.respond(f"Purged Successfully in {time_:0.2f}s", parse_mode="markdown")
 
 
 # TELETHON: /del
 async def delete_messages(event):
-    if event.from_id is None:
+    if (
+        not isinstance(event.from_id, int)
+        or event.from_id <= 0
+        or not event.chat_id
+        or (isinstance(event.chat_id, int) and event.chat_id <= 0)
+    ):
         return
 
     if not await user_is_admin(user_id=event.sender_id, message=event) and event.from_id not in [1087968824]:
@@ -86,7 +96,6 @@ async def delete_messages(event):
 @user_admin
 async def purgefrom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     msg = update.effective_message
-    user = update.effective_user
     chat = update.effective_chat
     bot = context.bot
 
@@ -102,7 +111,7 @@ async def purgefrom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
             sql.purgefrom(msg.chat_id, message_from)
             await msg.reply_to_message.reply_text(
-                "Message marked for deletion. Reply to another message with purgeto to delete all messages in between."
+                "Message marked for deletion. Reply to another message with /purgeto to delete all messages in between."
             )
 
         else:
@@ -113,7 +122,13 @@ async def purgefrom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 # TELETHON: /purgeto
 async def purgeto_messages(event):
     start = time.perf_counter()
-    if event.from_id is None:
+
+    if (
+        not isinstance(event.from_id, int)
+        or event.from_id <= 0
+        or not event.chat_id
+        or (isinstance(event.chat_id, int) and event.chat_id <= 0)
+    ):
         return
 
     if not await user_is_admin(user_id=event.sender_id, message=event) and event.from_id not in [1087968824]:
@@ -130,17 +145,20 @@ async def purgeto_messages(event):
         return
 
     messages = []
+    message_id = None
 
     x = sql.show_purgefrom(event.chat_id)
     for i in x:
         try:
             message_id = int(i.message_from)
-            message_from_ids = []
-            message_from_ids.append(int(i.message_from))
-            for message_from in message_from_ids:
-                sql.clear_purgefrom(event.chat_id, message_from)
+            sql.clear_purgefrom(event.chat_id, message_id)
         except:
             pass
+
+    if message_id is None:
+        await event.reply("No starting point found. Use /purgefrom first.")
+        return
+
     messages.append(message_id)
     delete_to = reply_msg.id
 
@@ -149,24 +167,23 @@ async def purgeto_messages(event):
         if len(messages) == 100:
             await event.client.delete_messages(event.chat_id, messages)
             messages = []
-    print(messages)
     try:
         await event.client.delete_messages(event.chat_id, messages)
     except:
         pass
+
     time_ = time.perf_counter() - start
-    text = f"Purged Successfully in {time_:0.2f}s"
-    await event.respond(text, parse_mode="markdown")
+    await event.respond(f"Purged Successfully in {time_:0.2f}s", parse_mode="markdown")
 
 
-# Help string
+# Help text
 __help__ = """
 *Admins only:*
  • `/del`*:* deletes the message you replied to
  • `/purge`*:* deletes all messages between this and the replied to message.
- • `/purge <number>`*:* if replied to with a number, deletes that many messages from target message, if sent normally in group then delete from current to previous messages
- • `/purgefrom`*:* marks a start point to purge from
- • `/purgeto`*:* marks the end point, messages bet to and from are deleted
+ • `/purge <number>`*:* deletes that many messages above current message
+ • `/purgefrom`*:* mark start of range to delete
+ • `/purgeto`*:* delete from marked start to this message
 """
 
 # Telethon Handlers
@@ -174,19 +191,18 @@ PURGE_HANDLER = purge_messages, events.NewMessage(pattern=r"^[!/]purge(?!\S+)")
 PURGETO_HANDLER = purgeto_messages, events.NewMessage(pattern="^[!/]purgeto$")
 DEL_HANDLER = delete_messages, events.NewMessage(pattern="^[!/]del$")
 
-# PTB Handler (✅ Updated)
+# PTB Handler
 PURGEFROM_HANDLER = CommandHandler(
     "purgefrom", purgefrom, filters=filters.ChatType.GROUPS, block=False
 )
 
 # Register handlers
-application.add_handler(PURGEFROM_HANDLER)  # ✅ PTB v21.1 uses Application
-
+application.add_handler(PURGEFROM_HANDLER)
 telethn.add_event_handler(*PURGE_HANDLER)
 telethn.add_event_handler(*PURGETO_HANDLER)
 telethn.add_event_handler(*DEL_HANDLER)
 
-# Module meta
+# Module Info
 __mod_name__ = "Purges"
 __command_list__ = ["del", "purge", "purgefrom", "purgeto"]
 __handlers__ = [PURGE_HANDLER, DEL_HANDLER]
