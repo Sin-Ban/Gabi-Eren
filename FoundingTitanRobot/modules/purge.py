@@ -5,82 +5,82 @@ from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes, filters
 
 from FoundingTitanRobot import telethn, application
-from FoundingTitanRobot.modules.helper_funcs.chat_status import (
-    can_delete,
-    user_admin,
-)
-from FoundingTitanRobot.modules.helper_funcs.telethn.chatstatus import (
-    can_delete_messages,
-    user_is_admin,
-)
+from FoundingTitanRobot.modules.helper_funcs.chat_status import can_delete, user_admin
+from FoundingTitanRobot.modules.helper_funcs.telethn.chatstatus import can_delete_messages, user_is_admin
 
 import FoundingTitanRobot.modules.sql.purges_sql as sql
 
-
-# /purge (telethon)
+# /purge
 async def purge_messages(event):
+    print(">> /purge triggered")  # debug print
     start = time.perf_counter()
+
     try:
         user_id = get_peer_id(event.from_id)
         chat_id = get_peer_id(event.chat_id)
         if user_id <= 0 or chat_id <= 0:
             return
-    except Exception:
+    except Exception as e:
+        print("Error getting IDs:", e)
         return
 
     if not await user_is_admin(user_id=user_id, message=event) and user_id not in [1087968824]:
-        await event.reply("Only Admins are allowed to use this command")
+        await event.reply("Only admins can use this command.")
         return
 
     if not await can_delete_messages(message=event):
-        await event.reply("Can't seem to purge the message")
+        await event.reply("I don't have delete rights here.")
         return
 
     reply_msg = await event.get_reply_message()
-    if not reply_msg and len(event.message.text[7:]) == 0:
-        await event.reply("Reply to a message or provide number of messages.")
-        return
+    text_args = event.message.text.split(maxsplit=1)
 
     messages = []
     delete_to = event.message.id
 
-    if not reply_msg and len(event.message.text[7:]) > 0:
-        message_id = delete_to - int(event.message.text[7:])
-        messages.append(message_id)
+    if not reply_msg and len(text_args) == 1:
+        await event.reply("Reply to a message or use `/purge <number>`.")
+        return
+
+    if not reply_msg:
+        try:
+            count = int(text_args[1])
+            message_id = delete_to - count
+        except:
+            await event.reply("Invalid number.")
+            return
     else:
         message_id = reply_msg.id
-        messages.append(event.reply_to_msg_id)
 
     for msg_id in range(message_id, delete_to + 1):
         messages.append(msg_id)
-        if len(messages) == 100:
+        if len(messages) >= 100:
             await event.client.delete_messages(chat_id, messages)
             messages = []
-    try:
+
+    if messages:
         await event.client.delete_messages(chat_id, messages)
-    except:
-        pass
 
     duration = time.perf_counter() - start
-    await event.respond(f"Purged Successfully in {duration:0.2f}s", parse_mode="markdown")
+    await event.respond(f"Purged in `{duration:.2f}s`", parse_mode="markdown")
 
 
-# /del (telethon)
+# /del
 async def delete_messages(event):
     try:
         user_id = get_peer_id(event.from_id)
         chat_id = get_peer_id(event.chat_id)
         if user_id <= 0 or chat_id <= 0:
             return
-    except Exception:
+    except:
         return
 
     if not await user_is_admin(user_id=user_id, message=event) and user_id not in [1087968824]:
-        await event.reply("Only Admins are allowed to use this command")
+        await event.reply("Only admins can use this command.")
         return
 
     if not await can_delete_messages(message=event):
-        await event.reply("Can't delete this message.")
+        await event.reply("I can't delete here.")
         return
 
     msg = await event.get_reply_message()
@@ -98,22 +98,19 @@ async def purgefrom(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat = update.effective_chat
     bot = context.bot
 
-    if can_delete(chat, bot.id):
+    if await can_delete(chat, bot.id):
         if msg.reply_to_message:
             message_id = msg.reply_to_message.message_id
             message_from = message_id - 1
 
             if sql.is_purgefrom(msg.chat_id, message_from):
-                await msg.reply_text("The source and target are same, give me a range.")
+                await msg.reply_text("Start and end points are the same.")
                 return
 
             sql.purgefrom(msg.chat_id, message_from)
-            await msg.reply_to_message.reply_text(
-                "Marked. Now reply to another message with /purgeto to delete in between."
-            )
+            await msg.reply_to_message.reply_text("Start point marked. Now reply to end message with /purgeto.")
         else:
             await msg.reply_text("Reply to a message to mark purge start.")
-    return
 
 
 # /purgeto (telethon)
@@ -124,76 +121,65 @@ async def purgeto_messages(event):
         chat_id = get_peer_id(event.chat_id)
         if user_id <= 0 or chat_id <= 0:
             return
-    except Exception:
+    except:
         return
 
     if not await user_is_admin(user_id=user_id, message=event) and user_id not in [1087968824]:
-        await event.reply("Only Admins are allowed to use this command")
+        await event.reply("Only admins can use this command.")
         return
 
     if not await can_delete_messages(message=event):
-        await event.reply("Can't purge these messages.")
+        await event.reply("I don't have delete rights.")
         return
 
     reply_msg = await event.get_reply_message()
     if not reply_msg:
-        await event.reply("Reply to a message to select where to purge up to.")
+        await event.reply("Reply to a message to mark end of purge.")
         return
 
     purge_start = sql.show_purgefrom(chat_id)
     if not purge_start:
-        await event.reply("No start point set. Use /purgefrom first.")
+        await event.reply("Use /purgefrom first.")
         return
 
     try:
         message_id = int(purge_start[0].message_from)
         sql.clear_purgefrom(chat_id, message_id)
     except:
-        await event.reply("Failed to retrieve purge start point.")
+        await event.reply("Error retrieving purge start.")
         return
 
-    messages = []
     delete_to = reply_msg.id
-    for msg_id in range(message_id, delete_to + 1):
-        messages.append(msg_id)
-        if len(messages) == 100:
-            await event.client.delete_messages(chat_id, messages)
-            messages = []
-    try:
-        await event.client.delete_messages(chat_id, messages)
-    except:
-        pass
+    messages = list(range(message_id, delete_to + 1))
+
+    for i in range(0, len(messages), 100):
+        await event.client.delete_messages(chat_id, messages[i:i + 100])
 
     duration = time.perf_counter() - start
-    await event.respond(f"Purged Successfully in {duration:0.2f}s", parse_mode="markdown")
+    await event.respond(f"Purged in `{duration:.2f}s`", parse_mode="markdown")
 
 
-# Help text
+# -- Help Text --
 __help__ = """
 *Admins only:*
  • `/del`*:* deletes the replied message
  • `/purge`*:* purges messages from replied to this
- • `/purge <number>`*:* purges that many messages up
+ • `/purge <number>`*:* purges that many messages above
  • `/purgefrom`*:* set start of purge
  • `/purgeto`*:* set end of purge and delete in between
 """
 
-# Telethon Handlers
-PURGE_HANDLER = purge_messages, events.NewMessage(pattern=r"^[!/]purge(?!\S+)")
-PURGETO_HANDLER = purgeto_messages, events.NewMessage(pattern="^[!/]purgeto$")
-DEL_HANDLER = delete_messages, events.NewMessage(pattern="^[!/]del$")
+# -- Register Handlers --
+telethn.add_event_handler(purge_messages, events.NewMessage(pattern=r"^[!/]purge(\s+\d+)?$"))
+telethn.add_event_handler(purgeto_messages, events.NewMessage(pattern=r"^[!/]purgeto$"))
+telethn.add_event_handler(delete_messages, events.NewMessage(pattern=r"^[!/]del$"))
 
-# PTB Handler
-PURGEFROM_HANDLER = CommandHandler(
-    "purgefrom", purgefrom, filters=filters.ChatType.GROUPS, block=False
-)
-
-# Register handlers
-application.add_handler(PURGEFROM_HANDLER)
-telethn.add_event_handler(*PURGE_HANDLER)
-telethn.add_event_handler(*PURGETO_HANDLER)
-telethn.add_event_handler(*DEL_HANDLER)
+application.add_handler(CommandHandler("purgefrom", purgefrom, filters=filters.ChatType.GROUPS, block=False))
 
 __mod_name__ = "Purges"
 __command_list__ = ["del", "purge", "purgefrom", "purgeto"]
-__handlers__ = [PURGE_HANDLER, DEL_HANDLER]
+__handlers__ = [
+    (purge_messages, events.NewMessage(pattern=r"^[!/]purge(\s+\d+)?$")),
+    (purgeto_messages, events.NewMessage(pattern=r"^[!/]purgeto$")),
+    (delete_messages, events.NewMessage(pattern=r"^[!/]del$")),
+]
