@@ -13,7 +13,7 @@ from FoundingTitanRobot.modules.helper_funcs.telethn.chatstatus import (
     user_is_admin,
 )
 
-import GabiBraunRobot.modules.sql.purges_sql as sql
+import FoundingTitanRobot.modules.sql.purges_sql as sql
 
 
 # TELETHON: /purge
